@@ -10,6 +10,7 @@ import * as constants from '../../common/constants';
 import * as db from '../../common/database';
 import * as session from '../../account/session';
 import * as fetch from '../../account/fetch';
+import appIconSrc from '../images/logo.png';
 
 const LOCALSTORAGE_KEY = 'insomnia::notifications::seen';
 
@@ -80,6 +81,7 @@ class Toast extends React.PureComponent<Props, State> {
         firstLaunch: stats.created,
         launches: stats.launches,
         platform: constants.getAppPlatform(),
+        app: constants.getAppId(),
         version: constants.getAppVersion(),
         requests: await db.count(models.request.type),
         requestGroups: await db.count(models.requestGroup.type),
@@ -154,7 +156,8 @@ class Toast extends React.PureComponent<Props, State> {
     electron.ipcRenderer.on('show-notification', this._listenerShowNotification);
   }
 
-  componentWillUnmount() {
+  // eslint-disable-next-line camelcase
+  UNSAFE_componentWillUnmount() {
     clearInterval(this._interval);
     electron.ipcRenderer.removeListener('show-notification', this._listenerShowNotification);
   }
@@ -172,7 +175,7 @@ class Toast extends React.PureComponent<Props, State> {
           'toast--show': visible,
         })}>
         <div className="toast__image">
-          <GravatarImg email={notification.email || 'gschier1990@gmail.com'} size={100} />
+          <GravatarImg email={notification.email} fallback={appIconSrc} size={100} />
         </div>
         <div className="toast__content">
           <p className="toast__message">{notification ? notification.message : 'Unknown'}</p>

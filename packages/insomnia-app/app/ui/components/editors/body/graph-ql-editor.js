@@ -86,10 +86,11 @@ class GraphQLEditor extends React.PureComponent<Props, State> {
   constructor(props: Props) {
     super(props);
     this._disabledOperationMarkers = [];
-    this._documentAST = null;
     this._queryEditor = null;
     this._isMounted = false;
+
     const body = GraphQLEditor._stringToGraphQL(props.content);
+    this._setDocumentAST(body.query);
 
     let automaticFetch;
     try {
@@ -312,9 +313,9 @@ class GraphQLEditor extends React.PureComponent<Props, State> {
     }
   }
 
-  _buildVariableTypes(schema: Object | null): { [string]: Object } {
+  _buildVariableTypes(schema: Object | null): { [string]: Object } | null {
     if (!schema) {
-      return {};
+      return null;
     }
 
     const definitions = this._documentAST ? this._documentAST.definitions : [];
@@ -380,7 +381,17 @@ class GraphQLEditor extends React.PureComponent<Props, State> {
     return this._documentAST.definitions.filter(def => def.kind === 'OperationDefinition');
   }
 
+  _setDocumentAST(query: string) {
+    try {
+      this._documentAST = parse(query);
+    } catch (e) {
+      this._documentAST = null;
+    }
+  }
+
   _handleBodyChange(query: string, variables: ?Object, operationName: ?string): void {
+    this._setDocumentAST(query);
+
     const body: GraphQLBody = { query };
 
     if (variables) {
@@ -391,13 +402,15 @@ class GraphQLEditor extends React.PureComponent<Props, State> {
       body.operationName = operationName;
     }
 
-    const newContent = GraphQLEditor._graphQLToString(body);
-
-    // This method gets called a lot so make sure we only do something if the
-    // new body has actually changed.
-    if (this.props.content === newContent) {
-      return;
+    // Find op if there isn't one yet
+    if (!body.operationName) {
+      const newOperationName = this._getCurrentOperation();
+      if (newOperationName) {
+        body.operationName = newOperationName;
+      }
     }
+
+    const newContent = GraphQLEditor._graphQLToString(body);
 
     this.setState({
       variablesSyntaxError: '',
@@ -406,17 +419,13 @@ class GraphQLEditor extends React.PureComponent<Props, State> {
 
     this.props.onChange(newContent);
     this._highlightOperation(body.operationName || null);
-
-    try {
-      this._documentAST = parse(query);
-    } catch (e) {
-      this._documentAST = null;
-    }
   }
 
   _handleQueryChange(query: string): void {
-    const currentOperation = this._getCurrentOperation();
-    this._handleBodyChange(query, this.state.body.variables, currentOperation);
+    // Since we're editing the query, we may be changing the operation name, so
+    // Don't pass it to the body change in order to automatically re-detect it
+    // based on the current cursor position.
+    this._handleBodyChange(query, this.state.body.variables, null);
   }
 
   _handleVariablesChange(variables: string): void {
@@ -461,7 +470,8 @@ class GraphQLEditor extends React.PureComponent<Props, State> {
     return JSON.stringify(body);
   }
 
-  componentWillReceiveProps(nextProps: Props) {
+  // eslint-disable-next-line camelcase
+  UNSAFE_componentWillReceiveProps(nextProps: Props) {
     if (this.state.automaticFetch && nextProps.request.url !== this.props.request.url) {
       clearTimeout(this._schemaFetchTimeout);
       this._schemaFetchTimeout = setTimeout(async () => {
@@ -477,7 +487,8 @@ class GraphQLEditor extends React.PureComponent<Props, State> {
     })();
   }
 
-  componentWillUnmount() {
+  // eslint-disable-next-line camelcase
+  UNSAFE_componentWillUnmount() {
     this._isMounted = false;
     clearTimeout(this._schemaFetchTimeout);
   }
@@ -656,9 +667,8 @@ class GraphQLEditor extends React.PureComponent<Props, State> {
             render={render}
             getRenderContext={getRenderContext}
             getAutocompleteConstants={() => Object.keys(variableTypes || {})}
-            lintOptions={{
-              variableToType: variableTypes,
-            }}
+            lintOptions={{ variableToType: variableTypes }}
+            noLint={!variableTypes}
             nunjucksPowerUserMode={settings.nunjucksPowerUserMode}
             isVariableUncovered={isVariableUncovered}
             onChange={this._handleVariablesChange}

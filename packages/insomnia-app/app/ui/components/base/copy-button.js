@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
+import { clipboard } from 'electron';
 import PropTypes from 'prop-types';
 import autobind from 'autobind-decorator';
-const { clipboard } = require('electron');
 
 @autobind
 class CopyButton extends PureComponent {
@@ -30,7 +30,8 @@ class CopyButton extends PureComponent {
     }, 2000);
   }
 
-  componentWillUnmount() {
+  // eslint-disable-next-line camelcase
+  UNSAFE_componentWillUnmount() {
     clearTimeout(this._triggerTimeout);
   }
 

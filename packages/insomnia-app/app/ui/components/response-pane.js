@@ -28,6 +28,8 @@ import ErrorBoundary from './error-boundary';
 import type { HotKeyRegistry } from '../../common/hotkeys';
 import { hotKeyRefs } from '../../common/hotkeys';
 import type { RequestVersion } from '../../models/request-version';
+import { showError } from '../components/modals/index';
+import { json as jsonPrettify } from 'insomnia-prettify';
 
 type Props = {
   // Functions
@@ -43,6 +45,7 @@ type Props = {
   previewMode: string,
   filter: string,
   filterHistory: Array<string>,
+  disableHtmlPreviewJs: boolean,
   editorFontSize: number,
   editorIndentSize: number,
   editorKeyMap: string,
@@ -50,6 +53,7 @@ type Props = {
   loadStartTime: number,
   responses: Array<Response>,
   hotKeyRegistry: HotKeyRegistry,
+  disableResponsePreviewLinks: boolean,
 
   // Other
   requestVersions: Array<RequestVersion>,
@@ -73,7 +77,7 @@ class ResponsePane extends React.PureComponent<Props> {
     return models.response.getBodyBuffer(this.props.response);
   }
 
-  async _handleDownloadResponseBody() {
+  async _handleDownloadResponseBody(prettify: boolean) {
     const { response, request } = this.props;
     if (!response || !request) {
       // Should never happen
@@ -96,11 +100,28 @@ class ResponsePane extends React.PureComponent<Props> {
       }
 
       const readStream = models.response.getBodyStream(response);
+      let dataBuffers = [];
       if (readStream) {
-        const to = fs.createWriteStream(outputPath);
-        readStream.pipe(to);
-        to.on('error', err => {
-          console.warn('Failed to save response body', err);
+        readStream.on('data', data => {
+          dataBuffers.push(data);
+        });
+        readStream.on('end', () => {
+          const to = fs.createWriteStream(outputPath);
+          const finalBuffer = Buffer.concat(dataBuffers);
+
+          to.on('error', err => {
+            showError({
+              title: 'Save Failed',
+              message: 'Failed to save response body',
+              error: err,
+            });
+          });
+
+          if (prettify && contentType.includes('json')) {
+            to.write(jsonPrettify(finalBuffer.toString('utf8')));
+          } else {
+            to.write(finalBuffer);
+          }
         });
       }
     });
@@ -157,28 +178,29 @@ class ResponsePane extends React.PureComponent<Props> {
 
   render() {
     const {
-      request,
-      responses,
-      requestVersions,
-      response,
-      previewMode,
-      handleShowRequestSettings,
-      handleSetPreviewMode,
-      handleSetActiveResponse,
-      handleDeleteResponses,
-      handleDeleteResponse,
-      handleSetFilter,
-      loadStartTime,
-      editorLineWrapping,
+      disableHtmlPreviewJs,
       editorFontSize,
       editorIndentSize,
       editorKeyMap,
+      editorLineWrapping,
       filter,
+      disableResponsePreviewLinks,
       filterHistory,
-      showCookiesModal,
+      handleDeleteResponse,
+      handleDeleteResponses,
+      handleSetActiveResponse,
+      handleSetFilter,
+      handleSetPreviewMode,
+      handleShowRequestSettings,
       hotKeyRegistry,
+      loadStartTime,
+      previewMode,
+      request,
+      requestVersions,
+      response,
+      responses,
+      showCookiesModal,
     } = this.props;
-
     const paneClasses = 'response-pane theme--pane pane';
     const paneHeaderClasses = 'pane__header theme--pane__header';
     const paneBodyClasses = 'pane__body theme--pane__body';
@@ -289,6 +311,7 @@ class ResponsePane extends React.PureComponent<Props> {
                 fullDownload={this._handleDownloadFullResponseBody}
                 previewMode={previewMode}
                 updatePreviewMode={handleSetPreviewMode}
+                showPrettifyOption={response.contentType.includes('json')}
               />
             </Tab>
             <Tab tabIndex="-1">
@@ -314,21 +337,22 @@ class ResponsePane extends React.PureComponent<Props> {
           <TabPanel className="react-tabs__tab-panel">
             <ResponseViewer
               ref={this._setResponseViewerRef}
-              // Send larger one because legacy responses have bytesContent === -1
-              responseId={response._id}
               bytes={Math.max(response.bytesContent, response.bytesRead)}
               contentType={response.contentType || ''}
-              previewMode={response.error ? PREVIEW_MODE_SOURCE : previewMode}
-              filter={filter}
-              filterHistory={filterHistory}
-              updateFilter={response.error ? null : handleSetFilter}
+              disableHtmlPreviewJs={disableHtmlPreviewJs}
+              disablePreviewLinks={disableResponsePreviewLinks}
               download={this._handleDownloadResponseBody}
-              getBody={this._handleGetResponseBody}
-              error={response.error}
-              editorLineWrapping={editorLineWrapping}
               editorFontSize={editorFontSize}
               editorIndentSize={editorIndentSize}
               editorKeyMap={editorKeyMap}
+              editorLineWrapping={editorLineWrapping}
+              error={response.error}
+              filter={filter}
+              filterHistory={filterHistory}
+              getBody={this._handleGetResponseBody}
+              previewMode={response.error ? PREVIEW_MODE_SOURCE : previewMode}
+              responseId={response._id}
+              updateFilter={response.error ? null : handleSetFilter}
               url={response.url}
             />
           </TabPanel>

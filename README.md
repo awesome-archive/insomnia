@@ -1,13 +1,13 @@
 # Insomnia REST Client
 
-[![Travis](https://api.travis-ci.org/getinsomnia/insomnia.svg)](https://travis-ci.org/getinsomnia/insomnia)
+[![Travis](https://api.travis-ci.org/Kong/insomnia.svg)](https://travis-ci.org/Kong/insomnia)
 [![Slack Channel](https://chat.insomnia.rest/badge.svg)](https://chat.insomnia.rest/)
-[![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/getinsomnia/insomnia/master/LICENSE)
+[![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/Kong/insomnia/blob/master/LICENSE)
 [![CodeFund](https://img.shields.io/badge/codefund-advertiser-success.svg)](https://codefund.io)
 
 Insomnia is a cross-platform _REST client_, built on top of [Electron](http://electron.atom.io/).
 
-![Insomnia REST Client Screenshot](https://raw.githubusercontent.com/getinsomnia/insomnia/master/screenshots/main.png)
+![Insomnia REST Client Screenshot](https://raw.githubusercontent.com/Kong/insomnia/master/screenshots/main.png)
 
 ## Download
 
@@ -57,6 +57,15 @@ npm test
 npm run app-start
 ```
 
+If you are on Linux and have problems, you may need to install `libfontconfig-dev`
+
+```bash
+# Install libfontconfig-dev
+sudo apt-get install libfontconfig-dev
+```
+
+If you are on Windows and have problems, you may need to install [Windows Build Tools](https://github.com/felixrieseberg/windows-build-tools)
+
 </details>
 
 <details>
@@ -75,6 +84,7 @@ the following tools:
 
 Here is a list of plugins available for installation via NPM.
 
+- [AWS IAM](https://www.npmjs.com/package/insomnia-plugin-aws-iam) – Template tag to retrieve system AWS credentials
 - [Chance](https://www.npmjs.com/package/insomnia-plugin-chance) – Generates a random value using Chance.JS
 - [Cuid](https://www.npmjs.com/package/insomnia-plugin-cuid) – Generate random cuids
 - [Custom Timestamp](https://www.npmjs.com/package/insomnia-plugin-customtimestamp) – Advanced timestamp creator
@@ -94,6 +104,7 @@ Here is a list of plugins available for installation via NPM.
 
 ## Community Projects
 
+- [Insomnia Documenter](https://github.com/jozsefsallai/insomnia-documenter) – Generate beautiful API documentation pages using your Insomnia export file.
 - [GitHub API Spec Importer](https://github.com/swinton/github-rest-apis-for-insomnia) – A complete set of GitHub REST API route specifications that can be imported straight into Insomnia
 - [Swaggymnia](https://github.com/mlabouardy/swaggymnia) – Generate [Swagger](https://swagger.io/) documentation for your existing API in Insomnia.
 

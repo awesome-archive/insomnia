@@ -106,7 +106,7 @@ class Tooltip extends React.PureComponent<Props, State> {
       bubble.style.top = `${Math.max(0, top)}px`;
 
       this.setState({ visible: true });
-    }, this.props.delay || 100);
+    }, this.props.delay || 400);
   }
 
   _handleMouseLeave(): void {
@@ -150,7 +150,8 @@ class Tooltip extends React.PureComponent<Props, State> {
     }
   }
 
-  componentWillUnmount() {
+  // eslint-disable-next-line camelcase
+  UNSAFE_componentWillUnmount() {
     // Remove the element from the body
     if (this._bubble) {
       const el = ReactDOM.findDOMNode(this._bubble);
